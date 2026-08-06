@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "author": "CarePulse AI Elderly Care Team",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "board-ssd1306", "id": "oled", "top": -150, "left": -180, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht", "top": -150, "left": 120, "attrs": {} },
+    { "type": "wokwi-mpu6050", "id": "mpu", "top": -50, "left": -220, "attrs": {} },
+    { "type": "wokwi-pushbutton", "id": "sos_btn", "top": 150, "left": -150, "attrs": { "color": "red", "label": "SOS" } },
+    { "type": "wokwi-buzzer", "id": "buzzer", "top": 150, "left": 150, "attrs": { "volume": "0.5" } },
+    { "type": "wokwi-led", "id": "red_led", "top": 80, "left": 150, "attrs": { "color": "red", "label": "ALERT" } },
+    { "type": "wokwi-led", "id": "green_led", "top": 20, "left": 150, "attrs": { "color": "green", "label": "NORMAL" } },
+    { "type": "wokwi-potentiometer", "id": "pot_hr", "top": 220, "left": 0, "attrs": { "label": "Simulate HeartRate" } },
+    { "type": "wokwi-potentiometer", "id": "pot_spo2", "top": 220, "left": 100, "attrs": { "label": "Simulate SpO2" } }
+  ],
+  "connections": [
+    [ "esp:GND.1", "oled:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "oled:VCC", "red", [ "v0" ] ],
+    [ "esp:D21", "oled:SDA", "blue", [ "v0" ] ],
+    [ "esp:D22", "oled:SCL", "yellow", [ "v0" ] ],
+    
+    [ "esp:GND.1", "dht:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "dht:VCC", "red", [ "v0" ] ],
+    [ "esp:D4", "dht:SDA", "green", [ "v0" ] ],
+
+    [ "esp:GND.1", "mpu:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "mpu:VCC", "red", [ "v0" ] ],
+    [ "esp:D21", "mpu:SDA", "blue", [ "v0" ] ],
+    [ "esp:D22", "mpu:SCL", "yellow", [ "v0" ] ],
+
+    [ "esp:GND.1", "sos_btn:1.N", "black", [ "v0" ] ],
+    [ "esp:D14", "sos_btn:2.N", "purple", [ "v0" ] ],
+
+    [ "esp:GND.1", "buzzer:1", "black", [ "v0" ] ],
+    [ "esp:D25", "buzzer:2", "orange", [ "v0" ] ],
+
+    [ "esp:GND.1", "red_led:C", "black", [ "v0" ] ],
+    [ "esp:D12", "red_led:A", "red", [ "v0" ] ],
+
+    [ "esp:GND.1", "green_led:C", "black", [ "v0" ] ],
+    [ "esp:D13", "green_led:A", "green", [ "v0" ] ],
+
+    [ "esp:GND.1", "pot_hr:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "pot_hr:VCC", "red", [ "v0" ] ],
+    [ "esp:VP", "pot_hr:SIG", "cyan", [ "v0" ] ],
+
+    [ "esp:GND.1", "pot_spo2:GND", "black", [ "v0" ] ],
+    [ "esp:3V3", "pot_spo2:VCC", "red", [ "v0" ] ],
+    [ "esp:VN", "pot_spo2:SIG", "magenta", [ "v0" ] ]
+  ]
+}

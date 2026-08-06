@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+firmware = "wokwi/esp32_firmware.ino"
+elf = "wokwi/esp32_firmware.ino"
+diagram = "wokwi/diagram.json"

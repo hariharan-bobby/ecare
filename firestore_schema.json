@@ -1,0 +1,29 @@
+{
+  "patients": {
+    "patient001": {
+      "heartRate": 74,
+      "spo2": 98,
+      "temperature": 36.8,
+      "fallDetected": false,
+      "sosPressed": false,
+      "emergency": false,
+      "emergencyType": "NORMAL",
+      "latitude": 37.774929,
+      "longitude": -122.419416,
+      "timestamp": "12:50:00 PM",
+      "status": "Stable",
+      "sensorHealth": "Optimal"
+    }
+  },
+  "alerts": {
+    "alert001": {
+      "patientId": "patient001",
+      "patientName": "Eleanor Vance",
+      "type": "SOS_PRESSED",
+      "message": "Patient triggered physical SOS panic button",
+      "timestamp": "2026-08-06 11:30:00",
+      "acknowledged": true,
+      "severity": "High"
+    }
+  }
+}

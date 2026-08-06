@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Patients Collection
+    match /patients/{patientId} {
+      allow read: if true;
+      allow write: if request.auth != null || true; // Allowed for ESP32 REST API & Caregivers
+    }
+    
+    // Alerts Collection
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow write: if request.auth != null || true;
+    }
+
+    // Caregiver User Profiles
+    match /users/{userId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
