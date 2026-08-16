@@ -1,5 +1,5 @@
-const express = require('express');
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
 
 const app = express();
 app.use(cors());
@@ -17,7 +17,7 @@ let currentTelemetry = {
   timestamp: new Date().toLocaleTimeString()
 };
 
-// Endpoint for ESP32 / Wokwi to post latest sensor readings
+// Endpoint for ESP32 / Wokwi / cURL to post latest sensor readings
 app.all('/api/telemetry', (req, res) => {
   if (req.body && Object.keys(req.body).length > 0) {
     currentTelemetry = {
@@ -25,7 +25,7 @@ app.all('/api/telemetry', (req, res) => {
       ...req.body,
       timestamp: new Date().toLocaleTimeString()
     };
-    console.log("📥 Received live telemetry from Wokwi:", currentTelemetry);
+    console.log("📥 Received live telemetry payload:", currentTelemetry);
   }
   res.json(currentTelemetry);
 });
