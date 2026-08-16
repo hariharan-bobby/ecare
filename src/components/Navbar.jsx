@@ -80,14 +80,14 @@ export const Navbar = () => {
                   className="w-full text-left px-3 py-2 text-xs text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center space-x-2"
                 >
                   <ShieldAlert className="w-4 h-4" />
-                  <span>SOS Panic Button</span>
+                  <span>SOS Panic Button + Auto-Call</span>
                 </button>
                 <button
                   onClick={() => { triggerEmergency('FALL_DETECTED'); setShowSimMenu(false); }}
                   className="w-full text-left px-3 py-2 text-xs text-amber-400 hover:bg-amber-500/10 rounded-lg flex items-center space-x-2"
                 >
                   <Activity className="w-4 h-4" />
-                  <span>MPU6050 Fall Trigger</span>
+                  <span>MPU6050 Fall Sensor + Auto-Call</span>
                 </button>
                 <button
                   onClick={() => { triggerEmergency('HIGH_HEART_RATE'); setShowSimMenu(false); }}
@@ -101,7 +101,14 @@ export const Navbar = () => {
                   className="w-full text-left px-3 py-2 text-xs text-sky-400 hover:bg-sky-500/10 rounded-lg flex items-center space-x-2"
                 >
                   <Activity className="w-4 h-4 text-sky-400" />
-                  <span>Low SpO₂ (&lt;90%)</span>
+                  <span>Low SpO₂ (&lt;90% Critical)</span>
+                </button>
+                <button
+                  onClick={() => { triggerEmergency('HIGH_TEMP'); setShowSimMenu(false); }}
+                  className="w-full text-left px-3 py-2 text-xs text-amber-400 hover:bg-amber-500/10 rounded-lg flex items-center space-x-2"
+                >
+                  <Activity className="w-4 h-4 text-amber-400" />
+                  <span>High Fever Temp (&gt;38°C)</span>
                 </button>
               </div>
             )}

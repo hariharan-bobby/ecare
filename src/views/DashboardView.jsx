@@ -41,7 +41,7 @@ ChartJS.register(
 );
 
 export const DashboardView = () => {
-  const { patientData, vitalHistory, triggerEmergency } = usePatient();
+  const { patientData, updateVitalsDirectly, vitalHistory, triggerEmergency } = usePatient();
 
   // Chart configuration for real-time telemetry
   const chartData = {
@@ -246,6 +246,94 @@ export const DashboardView = () => {
           </div>
         </div>
 
+      </div>
+
+      {/* Interactive Live Telemetry Adjuster Bar (Instant 0ms UI Updates) */}
+      <div className="p-5 rounded-2xl glass-panel border border-indigo-500/30 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse" />
+            <h3 className="text-sm font-bold text-white font-heading">Interactive Live Sensor Telemetry Sliders (Instant 0ms UI Updates)</h3>
+          </div>
+          <span className="text-[11px] text-slate-400">Drag sliders to test instant UI state changes & auto-call dispatch</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          
+          {/* Heart Rate Slider */}
+          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-400 font-semibold flex items-center gap-1">
+                <Heart className="w-3.5 h-3.5 text-rose-400" /> Heart Rate:
+              </span>
+              <span className={`font-mono font-bold ${patientData.heartRate > 120 ? 'text-red-400' : 'text-emerald-400'}`}>
+                {patientData.heartRate} BPM
+              </span>
+            </div>
+            <input
+              type="range"
+              min="35"
+              max="160"
+              value={patientData.heartRate}
+              onChange={(e) => updateVitalsDirectly({ heartRate: Number(e.target.value) })}
+              className="w-full accent-rose-500 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>35 BPM (Low)</span>
+              <span>120+ (Critical High)</span>
+            </div>
+          </div>
+
+          {/* SpO2 Slider */}
+          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-400 font-semibold flex items-center gap-1">
+                <Activity className="w-3.5 h-3.5 text-sky-400" /> SpO₂ Oxygen:
+              </span>
+              <span className={`font-mono font-bold ${patientData.spo2 < 90 ? 'text-red-400' : 'text-sky-400'}`}>
+                {patientData.spo2}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="70"
+              max="100"
+              value={patientData.spo2}
+              onChange={(e) => updateVitalsDirectly({ spo2: Number(e.target.value) })}
+              className="w-full accent-sky-400 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>&lt;90% (Critical Danger)</span>
+              <span>100% (Optimal)</span>
+            </div>
+          </div>
+
+          {/* Temperature Slider */}
+          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-400 font-semibold flex items-center gap-1">
+                <Thermometer className="w-3.5 h-3.5 text-amber-400" /> Body Temp:
+              </span>
+              <span className={`font-mono font-bold ${patientData.temperature > 38.0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                {patientData.temperature}°C
+              </span>
+            </div>
+            <input
+              type="range"
+              min="35.0"
+              max="41.0"
+              step="0.1"
+              value={patientData.temperature}
+              onChange={(e) => updateVitalsDirectly({ temperature: Number(e.target.value) })}
+              className="w-full accent-amber-400 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>36.5°C (Normal)</span>
+              <span>&gt;38.0°C (Critical Fever)</span>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       {/* Secondary Status Cards (Fall Detection, SOS Button, GPS Location) */}

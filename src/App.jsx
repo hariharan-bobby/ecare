@@ -12,12 +12,15 @@ import { MedicationView } from './views/MedicationView';
 import { WokwiSetupView } from './views/WokwiSetupView';
 import { LoginView } from './views/LoginView';
 
+import { EmergencyCallModal } from './components/EmergencyCallModal';
+
 const ProtectedLayout = ({ children }) => {
   const { currentUser } = useAuth();
   if (!currentUser) return <Navigate to="/login" replace />;
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-slate-950 flex flex-col relative">
+      <EmergencyCallModal />
       <Navbar />
       <div className="flex flex-1">
         <Sidebar />

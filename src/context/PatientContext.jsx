@@ -230,10 +230,82 @@ export const PatientProvider = ({ children }) => {
     setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, acknowledged: true } : a));
   };
 
+  // Immediate Telemetry & Emergency Threshold Evaluation Engine (0ms instant update)
+  const updateVitalsDirectly = (newVitals) => {
+    setPatientData(prev => {
+      const merged = { ...prev, ...newVitals };
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      merged.timestamp = timeStr;
+
+      // Evaluate Threshold Rules
+      let isEmerg = false;
+      let eType = 'NORMAL';
+
+      if (merged.sosPressed) {
+        isEmerg = true;
+        eType = 'SOS_PRESSED';
+      } else if (merged.fallDetected) {
+        isEmerg = true;
+        eType = 'FALL_DETECTED';
+      } else if (merged.heartRate > 120) {
+        isEmerg = true;
+        eType = 'HIGH_HEART_RATE';
+      } else if (merged.heartRate < 45) {
+        isEmerg = true;
+        eType = 'LOW_HEART_RATE';
+      } else if (merged.spo2 < 90) {
+        isEmerg = true;
+        eType = 'LOW_SPO2';
+      } else if (merged.temperature > 38.0) {
+        isEmerg = true;
+        eType = 'HIGH_TEMP';
+      }
+
+      if (isEmerg) {
+        merged.emergency = true;
+        merged.emergencyType = eType;
+        merged.status = 'CRITICAL ALERT';
+
+        // Add to alert history log
+        setAlerts(aPrev => [
+          {
+            id: 'alt-' + Date.now(),
+            patientId: merged.id,
+            patientName: merged.name,
+            type: eType,
+            message: `Immediate Wokwi Telemetry Alert: ${eType.replace(/_/g, ' ')} threshold breach detected!`,
+            timestamp: new Date().toLocaleString(),
+            acknowledged: false,
+            severity: 'CRITICAL',
+            vitalsSnapshot: { heartRate: merged.heartRate, spo2: merged.spo2, temp: merged.temperature }
+          },
+          ...aPrev
+        ]);
+      } else if (!prev.emergency) {
+        merged.status = 'Stable';
+      }
+
+      // Update real-time line chart stream
+      setVitalHistory(h => [
+        ...h.slice(-15),
+        { time: timeStr, heartRate: merged.heartRate, spo2: merged.spo2, temp: merged.temperature }
+      ]);
+
+      return merged;
+    });
+  };
+
+  // Expose global window helper for zero-delay Wokwi REST testing
+  useEffect(() => {
+    window.updatePatientVitals = updateVitalsDirectly;
+    return () => { delete window.updatePatientVitals; };
+  }, []);
+
   return (
     <PatientContext.Provider value={{
       patientData,
       setPatientData,
+      updateVitalsDirectly,
       alerts,
       vitalHistory,
       triggerEmergency,
