@@ -1,7 +1,14 @@
 /*
-  CarePulse AI — ESP32 Wokwi Firmware
-  Sensors: DHT22, MPU6050, SOS Push Button, OLED SSD1306, Simulated HeartRate & SpO2
-  Communication: WiFi + HTTPClient REST API update to Firebase
+  CarePulse AI — ESP32 Wokwi Firmware (Connected to Wokwi Project 471587035595461633)
+  GPIO Pin Mapping:
+    - HEART_PIN: 34 (Potentiometer)
+    - SPO2_PIN:  35 (Potentiometer)
+    - TEMP_PIN:  32 (Potentiometer / DHT22)
+    - BUTTON_PIN:18 (SOS Push Button)
+    - BUZZER_PIN:19 (Active Piezo Buzzer)
+    - GREEN_LED: 25 (Normal LED)
+    - RED_LED:   26 (Alert LED)
+  Communication: WiFi (Wokwi-GUEST) + HTTPClient REST API update to Firebase
 */
 
 #include <WiFi.h>
@@ -9,7 +16,6 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <DHT.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 
@@ -20,24 +26,23 @@ const char* password = "";
 // Firebase Realtime REST Endpoint
 const char* firebaseURL = "https://elderly-care-assistant-default-rtdb.firebaseio.com/patients/patient001.json";
 
-// Hardware Pin Definitions
-#define OLED_WIDTH 128
-#define OLED_HEIGHT 64
+// Hardware Pin Definitions (Matching Wokwi Project #471587035595461633)
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 #define OLED_RESET -1
-#define DHTPIN 4
-#define DHTTYPE DHT22
 
-#define SOS_PIN 14
-#define BUZZER_PIN 25
-#define RED_LED_PIN 12
-#define GREEN_LED_PIN 13
+#define HEART_PIN 34
+#define SPO2_PIN 35
+#define TEMP_PIN 32
 
-#define HR_POT_PIN 36   // VP
-#define SPO2_POT_PIN 39 // VN
+#define BUTTON_PIN 18
+#define BUZZER_PIN 19
+
+#define GREEN_LED 25
+#define RED_LED 26
 
 // Drivers
-Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &Wire, OLED_RESET);
-DHT dht(DHTPIN, DHTTYPE);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 Adafruit_MPU6050 mpu;
 
 bool emergencyActive = false;
@@ -47,13 +52,13 @@ unsigned long lastUpdate = 0;
 void setup() {
   Serial.begin(115200);
 
-  pinMode(SOS_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(RED_LED_PIN, OUTPUT);
-  pinMode(GREEN_LED_PIN, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
 
-  digitalWrite(GREEN_LED_PIN, HIGH);
-  digitalWrite(RED_LED_PIN, LOW);
+  digitalWrite(GREEN_LED, HIGH);
+  digitalWrite(RED_LED, LOW);
 
   // Initialize OLED
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
@@ -68,8 +73,7 @@ void setup() {
     display.display();
   }
 
-  // Initialize Sensors
-  dht.begin();
+  // Initialize MPU6050
   if (!mpu.begin()) {
     Serial.println("MPU6050 init warning");
   }
@@ -87,20 +91,19 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
 
-  // Read sensors every 2 seconds
-  if (currentMillis - lastUpdate >= 2000) {
+  // Read sensors every 1 second for instant sync
+  if (currentMillis - lastUpdate >= 1000) {
     lastUpdate = currentMillis;
 
-    // Read DHT22 Temperature
-    float temp = dht.readTemperature();
-    if (isnan(temp)) temp = 36.8;
+    // Read Analog Potentiometers mapped to match Wokwi project
+    int rawHR = analogRead(HEART_PIN);
+    int heartRate = map(rawHR, 0, 4095, 45, 160);
 
-    // Read Potentiometers for Heart Rate (40-160 BPM) & SpO2 (80-100%)
-    int rawHR = analogRead(HR_POT_PIN);
-    int heartRate = map(rawHR, 0, 4095, 45, 150);
+    int rawSpO2 = analogRead(SPO2_PIN);
+    int spo2 = map(rawSpO2, 0, 4095, 70, 100);
 
-    int rawSpO2 = analogRead(SPO2_POT_PIN);
-    int spo2 = map(rawSpO2, 0, 4095, 80, 100);
+    int rawTemp = analogRead(TEMP_PIN);
+    float temp = 35.0 + (rawTemp / 4095.0) * 6.0; // 35.0°C to 41.0°C range
 
     // Read MPU6050 Fall Acceleration
     sensors_event_t a, g, temp_mpu;
@@ -109,14 +112,13 @@ void loop() {
       float accelMag = sqrt(a.acceleration.x * a.acceleration.x + 
                             a.acceleration.y * a.acceleration.y + 
                             a.acceleration.z * a.acceleration.z);
-      // Fall threshold shock detection (> 25 m/s^2)
       if (accelMag > 25.0) {
         fallDetected = true;
       }
     }
 
     // Read SOS Button (Active LOW)
-    bool sosPressed = (digitalRead(SOS_PIN) == LOW);
+    bool sosPressed = (digitalRead(BUTTON_PIN) == LOW);
 
     // Check Emergency Conditions
     emergencyActive = false;
@@ -142,6 +144,11 @@ void loop() {
       emergencyReason = "HIGH_TEMP";
     }
 
+    // Serial Print Status matching Wokwi console
+    Serial.print("HR="); Serial.print(heartRate);
+    Serial.print(" SPO2="); Serial.print(spo2);
+    Serial.print(" TEMP="); Serial.println(temp, 2);
+
     // Update OLED Display & Actuators
     updateHardwareFeedback(heartRate, spo2, temp);
 
@@ -154,8 +161,8 @@ void updateHardwareFeedback(int hr, int spo2, float temp) {
   display.clearDisplay();
 
   if (emergencyActive) {
-    digitalWrite(RED_LED_PIN, HIGH);
-    digitalWrite(GREEN_LED_PIN, LOW);
+    digitalWrite(RED_LED, HIGH);
+    digitalWrite(GREEN_LED, LOW);
     tone(BUZZER_PIN, 1000, 300);
 
     display.setCursor(0, 0);
@@ -165,20 +172,20 @@ void updateHardwareFeedback(int hr, int spo2, float temp) {
     display.print("Reason: "); display.println(emergencyReason);
     display.print("HR: "); display.print(hr); display.println(" BPM");
     display.print("SpO2: "); display.print(spo2); display.println("%");
-    display.print("Temp: "); display.print(temp); display.println(" C");
+    display.print("Temp: "); display.print(temp, 1); display.println(" C");
   } else {
-    digitalWrite(RED_LED_PIN, LOW);
-    digitalWrite(GREEN_LED_PIN, HIGH);
+    digitalWrite(RED_LED, LOW);
+    digitalWrite(GREEN_LED, HIGH);
     noTone(BUZZER_PIN);
 
     display.setCursor(0, 0);
     display.setTextSize(1);
     display.println("CarePulse AI -- OK");
     display.println("--------------------");
-    display.print("Heart Rate: "); display.print(hr); display.println(" BPM");
-    display.print("SpO2 Level: "); display.print(spo2); display.println(" %");
-    display.print("Temp:       "); display.print(temp, 1); display.println(" C");
-    display.println("Status: Patient Stable");
+    display.print("HR : "); display.print(hr); display.println(" BPM");
+    display.print("SpO2: "); display.print(spo2); display.println("%");
+    display.print("Temp: "); display.print(temp, 1); display.println(" C");
+    display.println("Status: STABLE");
   }
   display.display();
 }
@@ -204,8 +211,6 @@ void sendFirebaseTelemetry(int hr, int spo2, float temp, bool fall, bool sos) {
     jsonPayload += "}";
 
     int httpResponseCode = http.PUT(jsonPayload);
-    Serial.print("Firebase REST update response: ");
-    Serial.println(httpResponseCode);
     http.end();
   }
 }
