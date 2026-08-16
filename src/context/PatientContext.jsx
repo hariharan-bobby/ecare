@@ -36,17 +36,6 @@ const INITIAL_ALERTS = [
     acknowledged: true,
     severity: 'High',
     vitalsSnapshot: { heartRate: 118, spo2: 94, temp: 37.5 }
-  },
-  {
-    id: 'alt-002',
-    patientId: 'patient001',
-    patientName: 'Eleanor Vance',
-    type: 'HIGH_TEMP',
-    message: 'Elevated body temperature detected (38.4°C)',
-    timestamp: new Date(Date.now() - 86400000).toLocaleString(),
-    acknowledged: true,
-    severity: 'Medium',
-    vitalsSnapshot: { heartRate: 98, spo2: 96, temp: 38.4 }
   }
 ];
 
@@ -55,16 +44,11 @@ export const PatientProvider = ({ children }) => {
   const [alerts, setAlerts] = useState(INITIAL_ALERTS);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [vitalHistory, setVitalHistory] = useState([
-    { time: '12:00', heartRate: 75, spo2: 98, temp: 36.8 },
-    { time: '12:05', heartRate: 75, spo2: 98, temp: 36.8 },
-    { time: '12:10', heartRate: 74, spo2: 98, temp: 36.8 },
-    { time: '12:15', heartRate: 78, spo2: 98, temp: 36.8 },
-    { time: '12:20', heartRate: 75, spo2: 98, temp: 36.8 }
+    { time: '12:00', heartRate: 75, spo2: 98, temp: 36.8 }
   ]);
 
   const audioCtxRef = useRef(null);
   const sirenOscRef = useRef(null);
-  const sirenGainRef = useRef(null);
 
   // Sound Siren Alarm generator using Web Audio API
   const startAlarmSound = () => {
@@ -102,9 +86,8 @@ export const PatientProvider = ({ children }) => {
 
       osc.start();
       sirenOscRef.current = osc;
-      sirenGainRef.current = gain;
     } catch (e) {
-      console.warn("Web Audio alert sound initialisation error:", e);
+      console.warn("Web Audio alert sound error:", e);
     }
   };
 
@@ -118,7 +101,6 @@ export const PatientProvider = ({ children }) => {
     }
   };
 
-  // Manage alarm sound based on emergency state
   useEffect(() => {
     if (patientData.emergency && !isAudioMuted) {
       startAlarmSound();
@@ -128,57 +110,87 @@ export const PatientProvider = ({ children }) => {
     return () => stopAlarmSound();
   }, [patientData.emergency, isAudioMuted]);
 
-  // Firestore live sync if API key is provided
+  // Firestore live sync if connected
   useEffect(() => {
     if (db && import.meta.env.VITE_FIREBASE_API_KEY) {
       const patientRef = doc(db, 'patients', 'patient001');
       const unsubDoc = onSnapshot(patientRef, (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data();
-          updateVitalsDirectly(data);
+          updateVitalsDirectly(docSnap.data());
         }
       });
       return () => unsubDoc();
     }
   }, []);
 
-  // FAST 1-SECOND AUTOMATIC WOKWI REST POLLING (Automatic Wokwi Telemetry Sync)
+  // CONTINUOUS LIVE SENSOR DATA RECEIVER (Polls Realtime Database & Local API Gateway every 1s)
   useEffect(() => {
-    const pollEndpoint = "https://elderly-care-assistant-default-rtdb.firebaseio.com/patients/patient001.json";
-    
-    const interval = setInterval(async () => {
+    const firebaseEndpoint = "https://elderly-care-assistant-default-rtdb.firebaseio.com/patients/patient001.json";
+    const localEndpoint = "http://localhost:5000/api/patient";
+
+    const fetchLatestTelemetry = async () => {
+      // 1. Try Firebase Realtime Database
       try {
-        const res = await fetch(pollEndpoint);
+        const res = await fetch(firebaseEndpoint);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data === 'object') {
+            updateVitalsDirectly(data);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Try Local Gateway
+      try {
+        const res = await fetch(localEndpoint);
         if (res.ok) {
           const data = await res.json();
           if (data && typeof data === 'object') {
             updateVitalsDirectly(data);
           }
         }
-      } catch (e) {
-        // Silent catch if offline
-      }
-    }, 1000);
+      } catch (e) {}
+    };
+
+    const interval = setInterval(fetchLatestTelemetry, 1000);
+    fetchLatestTelemetry(); // Initial fetch
 
     return () => clearInterval(interval);
   }, []);
 
-  // Immediate Telemetry & Emergency Threshold Evaluation Engine (0ms instant update)
+  // Immediate Telemetry & Emergency Threshold Evaluation Engine
   const updateVitalsDirectly = (newVitals) => {
+    if (!newVitals || typeof newVitals !== 'object') return;
+
     setPatientData(prev => {
-      // Avoid unnecessary re-renders if values haven't changed
+      const parsedHR = newVitals.heartRate !== undefined ? Number(newVitals.heartRate) : prev.heartRate;
+      const parsedSpO2 = newVitals.spo2 !== undefined ? Number(newVitals.spo2) : prev.spo2;
+      const parsedTemp = newVitals.temperature !== undefined ? Number(newVitals.temperature) : prev.temperature;
+      const parsedFall = newVitals.fallDetected !== undefined ? Boolean(newVitals.fallDetected) : prev.fallDetected;
+      const parsedSOS = newVitals.sosPressed !== undefined ? Boolean(newVitals.sosPressed) : prev.sosPressed;
+
+      // Avoid unnecessary state re-renders if sensor values are identical
       if (
-        newVitals.heartRate === prev.heartRate &&
-        newVitals.spo2 === prev.spo2 &&
-        newVitals.temperature === prev.temperature &&
-        newVitals.fallDetected === prev.fallDetected &&
-        newVitals.sosPressed === prev.sosPressed &&
-        newVitals.emergency === prev.emergency
+        parsedHR === prev.heartRate &&
+        parsedSpO2 === prev.spo2 &&
+        parsedTemp === prev.temperature &&
+        parsedFall === prev.fallDetected &&
+        parsedSOS === prev.sosPressed
       ) {
         return prev;
       }
 
-      const merged = { ...prev, ...newVitals };
+      const merged = {
+        ...prev,
+        ...newVitals,
+        heartRate: parsedHR,
+        spo2: parsedSpO2,
+        temperature: parsedTemp,
+        fallDetected: parsedFall,
+        sosPressed: parsedSOS
+      };
+
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       merged.timestamp = timeStr;
 
@@ -211,7 +223,6 @@ export const PatientProvider = ({ children }) => {
         merged.emergencyType = eType;
         merged.status = 'CRITICAL ALERT';
 
-        // Add to alert history log if new emergency
         if (!prev.emergency) {
           setAlerts(aPrev => [
             {
@@ -219,7 +230,7 @@ export const PatientProvider = ({ children }) => {
               patientId: merged.id,
               patientName: merged.name,
               type: eType,
-              message: `Automatic Wokwi Telemetry Alert: ${eType.replace(/_/g, ' ')} detected!`,
+              message: `Live Wokwi Telemetry Alert: ${eType.replace(/_/g, ' ')} detected!`,
               timestamp: new Date().toLocaleString(),
               acknowledged: false,
               severity: 'CRITICAL',
@@ -232,7 +243,7 @@ export const PatientProvider = ({ children }) => {
         merged.status = 'Stable';
       }
 
-      // Update real-time line chart stream
+      // Append to live telemetry trend chart stream
       setVitalHistory(h => [
         ...h.slice(-15),
         { time: timeStr, heartRate: merged.heartRate, spo2: merged.spo2, temp: merged.temperature }
@@ -273,7 +284,6 @@ export const PatientProvider = ({ children }) => {
     setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, acknowledged: true } : a));
   };
 
-  // Expose global window helper for zero-delay browser console / dev testing
   useEffect(() => {
     window.updatePatientVitals = updateVitalsDirectly;
     return () => { delete window.updatePatientVitals; };
