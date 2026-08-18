@@ -191,6 +191,13 @@ export const PatientProvider = ({ children }) => {
         sosPressed: parsedSOS
       };
 
+      // NO AUTOMATIC CLOSE LOCK: If emergency was already active, preserve emergency state until manual caregiver resolution
+      if (prev.emergency) {
+        merged.emergency = true;
+        merged.emergencyType = prev.emergencyType;
+        merged.status = 'CRITICAL ALERT';
+      }
+
       const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       merged.timestamp = timeStr;
 
