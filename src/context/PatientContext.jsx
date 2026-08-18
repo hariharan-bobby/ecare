@@ -50,7 +50,7 @@ export const PatientProvider = ({ children }) => {
   const audioCtxRef = useRef(null);
   const sirenOscRef = useRef(null);
 
-  // Sound Siren Alarm generator using Web Audio API
+  // Play "Devuda Devuda" Emergency Theme Audio Synthesizer (Web Audio API)
   const startAlarmSound = () => {
     if (isAudioMuted) return;
     try {
@@ -67,27 +67,31 @@ export const PatientProvider = ({ children }) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.type = 'triangle';
       
-      let high = true;
+      // "Devuda Devuda" upbeat rhythmic melody frequency sequence
+      const devudaNotes = [330, 392, 440, 493, 440, 392, 330, 440, 493, 523, 493, 440];
+      let noteIdx = 0;
+
+      osc.frequency.setValueAtTime(devudaNotes[0], ctx.currentTime);
+
       const interval = setInterval(() => {
         if (!sirenOscRef.current) {
           clearInterval(interval);
           return;
         }
-        osc.frequency.setValueAtTime(high ? 950 : 600, ctx.currentTime);
-        high = !high;
-      }, 400);
+        noteIdx = (noteIdx + 1) % devudaNotes.length;
+        osc.frequency.setValueAtTime(devudaNotes[noteIdx], ctx.currentTime);
+      }, 200);
 
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
       osc.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start();
       sirenOscRef.current = osc;
     } catch (e) {
-      console.warn("Web Audio alert sound error:", e);
+      console.warn("Devuda Devuda audio synthesizer error:", e);
     }
   };
 

@@ -27,10 +27,10 @@ export const EmergencyCallModal = () => {
       return;
     }
 
-    // Speak out emergency voice prompt using Web Speech API
+    // Speak out "Devuda Devuda" emergency voice prompt using Web Speech API
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const text = `Emergency alert! ${patientData.name} requires immediate assistance for ${patientData.emergencyType.replace(/_/g, ' ')}. Automatically calling caregiver now.`;
+      const text = `Devuda Devuda! Emergency alert! ${patientData.name} requires immediate assistance for ${patientData.emergencyType.replace(/_/g, ' ')}. Calling caregiver now.`;
       const msg = new SpeechSynthesisUtterance(text);
       msg.rate = 1.0;
       window.speechSynthesis.speak(msg);
@@ -71,10 +71,13 @@ export const EmergencyCallModal = () => {
           </svg>
         </button>
 
-        {/* Top Warning Badge */}
-        <div className="flex items-center justify-center space-x-2">
+        {/* Top Warning & Song Theme Badge */}
+        <div className="flex flex-col items-center justify-center gap-1">
           <span className="px-3 py-1 rounded-full text-xs font-black bg-red-600 text-white uppercase tracking-widest animate-bounce">
             🚨 AUTOMATIC CAREGIVER CALL DISPATCH
+          </span>
+          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 mt-1">
+            🎵 Playing "Devuda Devuda" Emergency Theme Audio
           </span>
         </div>
 
