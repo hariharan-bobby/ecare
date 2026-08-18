@@ -37,7 +37,18 @@ export const EmergencyBanner = () => {
       {/* Background animated radar pulse visual */}
       <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 rounded-full bg-red-500/10 pulse-ring pointer-events-none"></div>
 
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative z-10">
+      {/* Top Right Close (X) Button */}
+      <button
+        onClick={resolveEmergency}
+        className="absolute top-3 right-3 p-1.5 rounded-xl bg-red-950/80 hover:bg-red-800 text-slate-300 hover:text-white border border-red-500/40 transition-all z-20"
+        title="Close & Clear Emergency Banner"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative z-10 pr-6">
         
         {/* Warning Icon & Details */}
         <div className="flex items-start space-x-4">

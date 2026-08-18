@@ -60,6 +60,17 @@ export const EmergencyCallModal = () => {
         {/* Background pulsing ring */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-red-600/10 pulse-ring pointer-events-none"></div>
 
+        {/* Top Close (X) Button */}
+        <button
+          onClick={resolveEmergency}
+          className="absolute top-4 right-4 p-2 rounded-full bg-red-900/60 hover:bg-red-800 text-white/80 hover:text-white transition-all border border-red-500/40 z-20"
+          title="Close Emergency Popup & Silence Siren"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         {/* Top Warning Badge */}
         <div className="flex items-center justify-center space-x-2">
           <span className="px-3 py-1 rounded-full text-xs font-black bg-red-600 text-white uppercase tracking-widest animate-bounce">
